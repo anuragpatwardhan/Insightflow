@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background-color: #07090c;
+  color: #e7eef7;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-image:
+    radial-gradient(1200px 600px at 20% -10%, rgba(122, 162, 255, 0.08), transparent 60%),
+    radial-gradient(800px 400px at 90% 110%, rgba(92, 217, 163, 0.06), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Scrollbars */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: #1f2731;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: #2b3540; background-clip: padding-box; }
+
+/* Shimmer for skeletons */
+.skeleton {
+  background: linear-gradient(90deg, #11161d 0%, #18202a 50%, #11161d 100%);
+  background-size: 800px 100%;
+  border-radius: 8px;
+}
+
+/* Markdown surface */
+.prose-chat p { margin: 0 0 0.5rem 0; }
+.prose-chat p:last-child { margin-bottom: 0; }
+.prose-chat ul { list-style: disc; padding-left: 1.1rem; margin: 0.25rem 0 0.5rem; }
+.prose-chat ol { list-style: decimal; padding-left: 1.25rem; margin: 0.25rem 0 0.5rem; }
+.prose-chat li { margin: 0.15rem 0; }
+.prose-chat code {
+  background: #11161d;
+  border: 1px solid #1f2731;
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.prose-chat strong { color: #e7eef7; font-weight: 600; }
+.prose-chat a { color: #9cb8ff; text-decoration: underline; text-underline-offset: 2px; }
