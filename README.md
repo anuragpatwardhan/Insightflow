@@ -93,7 +93,7 @@ insightflow/
 │   │       ├── trends.py      # z-score, rolling stats
 │   │       ├── segments.py    # contribution analysis
 │   │       └── narratives.py  # Jinja templates + (optional) Ollama
-│   ├── tests/               # analysis engine tests
+│   ├── tests/               # analysis engine and agent tool tests
 │   └── scripts/             # init_db, seed_data, run_analysis
 └── frontend/
     ├── app/                 # Next.js app router
@@ -119,7 +119,6 @@ error would corrupt every insight downstream:
   missing from the baseline, and that the caller's DataFrame is never mutated.
 - **Narratives** — headline and summary wording per pattern, segment attribution, and
   the severity matrix including how metric direction decides what counts as bad.
-
 - **Agent tools** — fuzzy metric lookup including the synonym fallback, metric
   overviews, change explanation with and without dimensions, insight filtering and
   ordering, and that every registered tool has a matching JSON schema.
