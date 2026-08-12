@@ -109,8 +109,8 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-46 cases over the analysis engine — the layer where a silent error would corrupt every
-insight downstream:
+87 cases over the analysis engine and the agent tools — the layers where a silent
+error would corrupt every insight downstream:
 
 - **Trends** — spike, drop, plateau and volatility classification, the thresholds that
   must *not* fire, significance scaling, and the zero-variance baseline case where
@@ -120,8 +120,14 @@ insight downstream:
 - **Narratives** — headline and summary wording per pattern, segment attribution, and
   the severity matrix including how metric direction decides what counts as bad.
 
+- **Agent tools** — fuzzy metric lookup including the synonym fallback, metric
+  overviews, change explanation with and without dimensions, insight filtering and
+  ordering, and that every registered tool has a matching JSON schema.
+
 The narrative tests pin `ollama_enabled` off, so they stay deterministic and never
-reach for a model server.
+reach for a model server. Agent-tool tests run against in-memory SQLite through the
+real ORM rather than a hand-written fake session, so the queries themselves are
+exercised.
 
 ## Roadmap
 
