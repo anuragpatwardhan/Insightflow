@@ -9,16 +9,28 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-from app.db import Base
+from app.db import Base, get_db
+from app.main import app
 from app.models import Insight, Metric, MetricValue
 
 
 @pytest.fixture
 def db():
-    engine = create_engine("sqlite://", future=True)
+    # TestClient runs the app on its own thread, and SQLite connections are
+    # bound to the thread that opened them. StaticPool keeps one connection for
+    # the whole engine — which is also what makes an in-memory database survive
+    # between checkouts instead of being recreated empty each time.
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        future=True,
+    )
     Base.metadata.create_all(engine)
     session = sessionmaker(bind=engine, autoflush=False, future=True)()
     try:
@@ -26,6 +38,23 @@ def db():
     finally:
         session.close()
         engine.dispose()
+
+
+@pytest.fixture
+def client(db):
+    """A TestClient whose routes read the same in-memory session as the fixtures.
+
+    Overriding get_db rather than patching the engine means the real dependency
+    wiring is exercised — a router that forgot to declare its dependency would
+    still fail here.
+    """
+    app.dependency_overrides[get_db] = lambda: db
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        # Leaving the override in place would leak into any later test module.
+        app.dependency_overrides.clear()
 
 
 @pytest.fixture
