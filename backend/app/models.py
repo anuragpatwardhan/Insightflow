@@ -1,6 +1,16 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import relationship
 
 from app.db import Base
@@ -15,6 +25,17 @@ class Metric(Base):
     unit = Column(String(32), nullable=True)
     direction = Column(String(16), nullable=False, default="neutral")  # higher_is_better | lower_is_better | neutral
     description = Column(Text, nullable=True)
+
+    # Suppression. A metric that fires constantly trains people to ignore the
+    # feed, so it can be muted without deleting it or its history.
+    #
+    # The expiry is an absolute timestamp rather than a duration, so reloading
+    # or restarting cannot silently extend a snooze, and a lapsed one simply
+    # stops matching — no cleanup job is needed for the metric to come back.
+    # NULL expiry with suppressed_at set means suppressed indefinitely.
+    suppressed_at = Column(DateTime, nullable=True)
+    suppressed_until = Column(DateTime, nullable=True)
+    suppression_reason = Column(Text, nullable=True)
 
     values = relationship("MetricValue", back_populates="metric", cascade="all, delete-orphan")
     changes = relationship("MetricChange", back_populates="metric", cascade="all, delete-orphan")
@@ -74,5 +95,12 @@ class Insight(Base):
     suggested_followup = Column(Text, nullable=True)
     severity = Column(String(16), nullable=False, default="info")  # info | warn | critical
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    # Feedback loop. NULL means nobody has judged this insight yet, which is a
+    # different state from "not useful" — the analysis quality report counts
+    # only insights that were actually rated.
+    helpful = Column(Boolean, nullable=True)
+    feedback_note = Column(Text, nullable=True)
+    feedback_at = Column(DateTime, nullable=True)
 
     metric = relationship("Metric", back_populates="insights")

@@ -15,6 +15,7 @@ from sqlalchemy import delete, select
 
 from app.analysis.narratives import build_insight
 from app.analysis.segments import rank_segments
+from app.analysis.suppression import active_metrics
 from app.analysis.trends import DetectionConfig, detect
 from app.db import SessionLocal
 from app.models import Insight, Metric, MetricChange, MetricValue, Segment
@@ -38,7 +39,14 @@ def run():
     cfg = DetectionConfig()
     db = SessionLocal()
     try:
-        metrics = db.scalars(select(Metric)).all()
+        # Suppressed metrics are skipped entirely rather than analysed and then
+        # hidden — generating insights nobody will see is wasted work, and it
+        # would also reset the feedback the user already gave on them.
+        all_metrics = db.scalars(select(Metric)).all()
+        metrics = active_metrics(all_metrics)
+        skipped = len(all_metrics) - len(metrics)
+        if skipped:
+            print(f"Skipping {skipped} suppressed metric(s).")
         # clear previous analysis output
         db.execute(delete(Insight))
         db.execute(delete(Segment))
