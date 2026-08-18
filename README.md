@@ -128,7 +128,7 @@ insightflow/
 │   │       ├── trends.py      # z-score, rolling stats
 │   │       ├── segments.py    # contribution analysis
 │   │       └── narratives.py  # Jinja templates + (optional) Ollama
-│   ├── tests/               # analysis engine and agent tool tests
+│   ├── tests/               # analysis, agent loop, tools and route tests
 │   └── scripts/             # init_db, seed_data, run_analysis
 └── frontend/
     ├── app/                 # Next.js app router
@@ -165,7 +165,6 @@ layers where a silent error would corrupt every insight downstream:
   writes to the database.
 - **Feedback** — re-rating replacing a verdict, blank notes dropped, and that the
   helpful rate stays null rather than zero when nothing has been rated.
-
 - **Agent loop** — when the loop stops, that a tool result is fed back with the
   assistant's tool call ahead of it, arguments arriving as a JSON string rather than a
   dict, several tool calls in one step, the step cap that stops a tool-only model looping
