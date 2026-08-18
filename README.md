@@ -144,7 +144,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-170 cases over the analysis engine, the agent tools and the HTTP surface — the
+196 cases over the analysis engine, the agent loop, the agent tools and the HTTP surface — the
 layers where a silent error would corrupt every insight downstream:
 
 - **Trends** — spike, drop, plateau and volatility classification, the thresholds that
@@ -165,6 +165,12 @@ layers where a silent error would corrupt every insight downstream:
   writes to the database.
 - **Feedback** — re-rating replacing a verdict, blank notes dropped, and that the
   helpful rate stays null rather than zero when nothing has been rated.
+
+- **Agent loop** — when the loop stops, that a tool result is fed back with the
+  assistant's tool call ahead of it, arguments arriving as a JSON string rather than a
+  dict, several tool calls in one step, the step cap that stops a tool-only model looping
+  forever, and that output is truncated before it can blow the context window. A failing
+  or unknown tool becomes an error the model can recover from rather than a 500.
 
 The narrative tests pin `ollama_enabled` off, so they stay deterministic and never
 reach for a model server. Agent-tool tests run against in-memory SQLite through the
