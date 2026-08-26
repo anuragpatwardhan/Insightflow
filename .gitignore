@@ -16,3 +16,6 @@ data/
 
 # OS
 .DS_Store
+
+# TypeScript incremental build state, written by tsc --noEmit
+*.tsbuildinfo

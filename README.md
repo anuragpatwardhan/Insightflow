@@ -133,7 +133,9 @@ insightflow/
 └── frontend/
     ├── app/                 # Next.js app router
     ├── components/          # InsightCard, InsightFeed
-    └── lib/api.ts           # fetch client
+    └── lib/
+        ├── api.ts           # fetch client
+        └── sparkline.ts     # chart geometry, kept pure so it can be tested
 ```
 
 ## Tests
@@ -142,10 +144,13 @@ insightflow/
 cd backend
 pip install -r requirements-dev.txt
 pytest
+
+cd ../frontend
+npm test
 ```
 
-196 cases over the analysis engine, the agent loop, the agent tools and the HTTP surface — the
-layers where a silent error would corrupt every insight downstream:
+234 cases. The backend's 196 cover the analysis engine, the agent loop, the agent tools and
+the HTTP surface — the layers where a silent error would corrupt every insight downstream:
 
 - **Trends** — spike, drop, plateau and volatility classification, the thresholds that
   must *not* fire, significance scaling, and the zero-variance baseline case where
@@ -170,6 +175,20 @@ layers where a silent error would corrupt every insight downstream:
   dict, several tool calls in one step, the step cap that stops a tool-only model looping
   forever, and that output is truncated before it can blow the context window. A failing
   or unknown tool becomes an error the model can recover from rather than a 500.
+
+The frontend's 38 cover the two pieces of plain TypeScript behind the UI:
+
+- **Sparkline geometry** — mostly the degenerate cases, since the chart sits beside a
+  headline asserting the metric moved and the two must not contradict each other. A flat
+  series is drawn down the middle rather than along the floor, where it would read as
+  having collapsed to its minimum; a day with no value is skipped rather than allowed to
+  poison min and max and blank the chart silently; and a series too short to show a trend
+  returns nothing so the caller keeps the skeleton.
+- **API client** — that a filter reaches the query string, since one silently dropped
+  returns the unfiltered list and looks like a request that found everything, and that a
+  failed request throws rather than returning an empty list, which would render as "no
+  insights" — indistinguishable from a healthy account. Chat errors carry the server's own
+  message, because the agent fails in ways worth reading.
 
 The narrative tests pin `ollama_enabled` off, so they stay deterministic and never
 reach for a model server. Agent-tool tests run against in-memory SQLite through the

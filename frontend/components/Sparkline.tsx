@@ -2,8 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE } from "@/lib/api";
-
-type Point = { ts: string; value: number };
+import { buildSparkline, type SparklinePoint as Point } from "@/lib/sparkline";
 
 async function fetchSeries(metricId: number, days: number): Promise<Point[]> {
   const r = await fetch(`${API_BASE}/metrics/${metricId}/series?days=${days}`);
@@ -30,30 +29,16 @@ export function Sparkline({
     staleTime: 60_000,
   });
 
-  if (!data || data.length < 2) {
+  const geometry = data ? buildSparkline(data, width, height) : null;
+  if (!geometry) {
     return <div className="skeleton animate-shimmer" style={{ width, height }} />;
   }
 
-  const values = data.map((d) => d.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const stepX = width / (values.length - 1);
-
-  const points = values.map((v, i) => {
-    const x = i * stepX;
-    const y = height - ((v - min) / span) * (height - 4) - 2;
-    return [x, y] as const;
-  });
-
-  const path = points.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)).join(" ");
-  const areaPath = `${path} L${width},${height} L0,${height} Z`;
+  const { path, areaPath, last } = geometry;
 
   const stroke =
     trend === "up" ? "#ef6b6b" : trend === "down" ? "#5cd9a3" : "#7aa2ff";
   const gid = `spark-${metricId}-${trend}`;
-
-  const [lastX, lastY] = points[points.length - 1];
 
   return (
     <svg width={width} height={height} className="overflow-visible" aria-hidden>
@@ -65,8 +50,8 @@ export function Sparkline({
       </defs>
       <path d={areaPath} fill={`url(#${gid})`} />
       <path d={path} stroke={stroke} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={lastX} cy={lastY} r="2.4" fill={stroke} />
-      <circle cx={lastX} cy={lastY} r="5" fill={stroke} opacity="0.18" />
+      <circle cx={last.x} cy={last.y} r="2.4" fill={stroke} />
+      <circle cx={last.x} cy={last.y} r="5" fill={stroke} opacity="0.18" />
     </svg>
   );
 }
