@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { api, type ChatMessage, type ChatTraceItem } from "@/lib/api";
+import { errorTurn, historyFor, isReplyCurrent, type Turn } from "@/lib/chat";
 import { LogoMark } from "./Logo";
 
 const SUGGESTIONS = [
@@ -15,27 +16,28 @@ const SUGGESTIONS = [
   { title: "How is deployment_failures trending?", hint: "Overview + trend" },
 ];
 
-type Turn = ChatMessage & { trace?: ChatTraceItem[] };
-
 export function ChatPanel() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // Bumped on every reset. A request carries the value it left with, so
+  // a reply that lands after the chat was cleared can be recognised and
+  // dropped rather than appended to a conversation it does not belong to.
+  const conversation = useRef(0);
 
   const mutation = useMutation({
     mutationFn: async (text: string) => {
-      const history: ChatMessage[] = turns.map(({ role, content }) => ({ role, content }));
-      return api.chat(history, text);
+      const sentDuring = conversation.current;
+      const history: ChatMessage[] = historyFor(turns);
+      return { sentDuring, reply: await api.chat(history, text) };
     },
-    onSuccess: (res) => {
-      setTurns((t) => [...t, { role: "assistant", content: res.answer, trace: res.trace }]);
+    onSuccess: ({ sentDuring, reply }) => {
+      if (!isReplyCurrent(sentDuring, conversation.current)) return;
+      setTurns((t) => [...t, { role: "assistant", content: reply.answer, trace: reply.trace }]);
     },
     onError: (err: Error) => {
-      setTurns((t) => [
-        ...t,
-        { role: "assistant", content: `**Error.** ${err.message}\n\nIs Ollama running and the model pulled?` },
-      ]);
+      setTurns((t) => [...t, errorTurn(err.message)]);
     },
   });
 
@@ -77,7 +79,10 @@ export function ChatPanel() {
         </div>
         {turns.length > 0 && (
           <button
-            onClick={() => setTurns([])}
+            onClick={() => {
+              conversation.current += 1;
+              setTurns([]);
+            }}
             className="text-[11px] text-muted hover:text-text border border-border rounded-md px-2 py-1 transition"
           >
             New chat

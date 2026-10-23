@@ -149,7 +149,7 @@ cd ../frontend
 npm test
 ```
 
-234 cases. The backend's 196 cover the analysis engine, the agent loop, the agent tools and
+252 cases. The backend's 196 cover the analysis engine, the agent loop, the agent tools and
 the HTTP surface — the layers where a silent error would corrupt every insight downstream:
 
 - **Trends** — spike, drop, plateau and volatility classification, the thresholds that
@@ -176,7 +176,7 @@ the HTTP surface — the layers where a silent error would corrupt every insight
   forever, and that output is truncated before it can blow the context window. A failing
   or unknown tool becomes an error the model can recover from rather than a 500.
 
-The frontend's 38 cover the two pieces of plain TypeScript behind the UI:
+The frontend's 56 cover the plain TypeScript behind the UI:
 
 - **Sparkline geometry** — mostly the degenerate cases, since the chart sits beside a
   headline asserting the metric moved and the two must not contradict each other. A flat
@@ -184,6 +184,14 @@ The frontend's 38 cover the two pieces of plain TypeScript behind the UI:
   having collapsed to its minimum; a day with no value is skipped rather than allowed to
   poison min and max and blank the chart silently; and a series too short to show a trend
   returns nothing so the caller keeps the skeleton.
+- **Conversation bookkeeping** — what the model is shown and which replies are kept.
+  An error bubble is written by this client, not the model, so it is flagged and excluded
+  from the history; replaying it would put an error message in the model's own voice into
+  its context. The flag, rather than the text, is what excludes it, so a genuine answer
+  about errors still survives. The tool trace is stripped as well, since replayed as
+  message content it reads like an observation made this turn. And a reply is dropped when
+  it lands after the chat was cleared, which is reachable because "New chat" appears as
+  soon as there is one turn.
 - **API client** — that a filter reaches the query string, since one silently dropped
   returns the unfiltered list and looks like a request that found everything, and that a
   failed request throws rather than returning an empty list, which would render as "no
